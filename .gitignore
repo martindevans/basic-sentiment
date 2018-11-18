@@ -1,0 +1,8 @@
+/.vscode
+/w2v/__pycache__
+/utils/__pycache__
+/sentiment/__pycache__
+/logs
+/models
+/utils/gutenbergdammit/__pycache__
+/data_cache
