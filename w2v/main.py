@@ -2,6 +2,10 @@ import os
 import json
 import pathlib
 import pickle
+import gzip
+import io
+import time
+from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
 import argparse as ap
@@ -22,13 +26,16 @@ def main(tensorboard):
     parser.add_argument("--skip-training", dest="skip_train", action='store_const', const=True, default=False, help='Do not train the model')
     args = parser.parse_args()
 
+    set_path = pathlib.Path(os.path.join(pr.dataset_cache, "dataset.lzma"))
+    cpl_path = pathlib.Path(os.path.join(pr.dataset_cache, "couples.lzma"))
+
     if args.rebuild:
-        build_dataset()
+        build_dataset(set_path, cpl_path)
 
     if not args.skip_train:
-        train(tensorboard)
+        train(tensorboard, set_path, cpl_path)
 
-def build_dataset():
+def build_dataset(set_path, cpl_path):
 
     ## Load list of sentences from datasets
     print("## Loading Data")
@@ -48,24 +55,26 @@ def build_dataset():
 
     ## Save it all to disk
     print("## Saving Dataset")
-    base_path = pr.dataset_cache
-    set_path = pathlib.Path(os.path.join(base_path, "dataset.json"))
-    cpl_path = pathlib.Path(os.path.join(base_path, "couples.json"))
-    with set_path.open('wb') as set_file:
-        pickle.dump(dataset, set_file)
-    with cpl_path.open('wb') as cpl_file:
-        pickle.dump(samples, cpl_file)
+    with gzip.open(set_path, "wb") as set_file:
+        with io.BufferedWriter(set_file) as writer:
+            pickle.dump(dataset, writer)
+    with gzip.open(cpl_path, 'wb') as cpl_file:
+        with io.BufferedWriter(cpl_file) as writer:
+            pickle.dump(samples, writer)
 
-def train(tensorboard):
+def train(tensorboard, set_path, cpl_path):
 
     print("## Loading Dataset")
+
     dataset = None
-    with pathlib.Path(os.path.join(pr.dataset_cache, "dataset.json")).open('rb') as set_file:
-        dataset = pickle.load(set_file)
+    with gzip.open(set_path, "rb") as set_file:
+        with io.BufferedReader(set_file) as reader:
+            dataset = pickle.load(reader)
 
     samples = None
-    with pathlib.Path(os.path.join(pr.dataset_cache, "couples.json")).open('rb') as cpl_file:
-        samples = pickle.load(cpl_file)
+    with gzip.open(cpl_path, 'rb') as cpl_file:
+        with io.BufferedReader(cpl_file) as reader:
+            samples = pickle.load(reader)
 
     print(json.dumps(dataset.stats(), sort_keys=True, indent=4, separators=(',', ': ')))
     print(" - {0} couples".format(samples.get_couples_count()))
