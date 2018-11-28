@@ -96,18 +96,16 @@ def __sentences_from_str(book, min_sentence_length):
 
 def load_wikipedia_sentences(path, min_sentence_length=6, lines=10000):
 
-    bar = pb.ProgressBar(widgets=[ pb.Percentage(), ' ', pb.AdaptiveETA(), ' ', pb.Bar() ], max_value=lines)
-    bar.start()
+    with pb.ProgressBar(widgets=[ pb.Percentage(), ' ', pb.AdaptiveETA(), ' ', pb.Bar() ], max_value=lines) as bar:
+        p = pathlib.Path(path)
+        sentences = []
+        with p.open(encoding="utf8") as f:
+            for i in range(0, lines):
+                sentences.extend(__sentences_from_str(f.readline(), min_sentence_length))
+                bar.update(i)
 
-    p = pathlib.Path(path)
-    sentences = []
-    with p.open(encoding="utf8") as f:
-        for i in range(0, lines):
-            sentences.extend(__sentences_from_str(f.readline(), min_sentence_length))
-            bar.update(i)
-
-    print(" - Wikipedia sentences: " + str(len(sentences)))
-    return sentences
+        print(" - Wikipedia sentences: " + str(len(sentences)))
+        return sentences
 
 def load_gutenberg_sentences(path, min_sentence_length=6, total_books=100):
     ## Load books and split up into a List<List<String>>. Each inner list is a sentence (split into words)
@@ -120,11 +118,11 @@ def load_gutenberg_sentences(path, min_sentence_length=6, total_books=100):
         if not "Author Birth" in info or len(info["Author Birth"]) == 0: continue
 
         # Skip book if birthday cannot be parsed as int
-        birthday = info["Author Birth"][0];
+        birthday = info["Author Birth"][0]
         try:
             birthday = int(birthday)
         except:
-            continue;
+            continue
 
         # Skip this book if it's too old
         if birthday < 1925: continue
