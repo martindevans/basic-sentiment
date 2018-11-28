@@ -1,13 +1,19 @@
-## Datasets
- 
- - `Gutenbergdammit` dataset is from <https://github.com/aparrish/gutenberg-dammit>
- - `Wikipedia` dataset is from polyglot project <https://sites.google.com/site/rmyeid/projects/polyglot>
+## Projects
 
-## Running
+### sentiment
 
-Run `python main.py`
- - Edit tensorflow config in main.py
- - Edit tensorboard config in main.py
-   - Run `tensorboard --logdir logs` and visit `localhost:6006`
- - Comment out datasets used in `w2v/main.py`
- - Change hyperparameters at the top of `w2v/main.py`
+This is a basic LSTM sentiment analyser, train on an ad-hoc dataset of movie reviews, yelp reviews and manually classified tweets. Data should be in files with each line being a single entry:
+
+`Sentence<tab>classification`
+
+`Classification` should be a number. `0` indicates negative, `1` indicates positive and `2` indicates neutral.
+
+### w2v
+
+This is an attempt at training a word2vec model. Using three datasets:
+
+ - The ad-hoc sentiment dataset in the previous project
+ - `Gutenbergdammit` dataset from <https://github.com/aparrish/gutenberg-dammit>
+ - `Wikipedia` dataset from polyglot project <https://sites.google.com/site/rmyeid/projects/polyglot>
+
+### pretrained-w2v
