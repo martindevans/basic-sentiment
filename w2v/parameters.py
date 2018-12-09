@@ -32,10 +32,10 @@ valid_size = 4
 valid_window = 250
 
 ## Path to the gutenberg dammit dataset (https://github.com/aparrish/gutenberg-dammit)
-gutenberg_path = "todo: path here"
+gutenberg_path = "\\\\martin-server\\j\\Mute\\ml-datasets\\language\\gutenberg-dammit-files-v002.zip"
 
 ## Path to wikipedia plain text dataset (https://sites.google.com/site/rmyeid/projects/polyglot)
-wikipedia_path = "todo: path here"
+wikipedia_path = "\\\\martin-server\\j\\Mute\\ml-datasets\\wikipedia\\full.txt"
 
 ## When the dataset is built where should it be stored?
 dataset_cache = "data_cache"

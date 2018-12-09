@@ -23,8 +23,11 @@ def main():
     #from sentiment import sentiment
     #sentiment.main(tensorboard)
 
-    from w2v import main as w2vmain
-    w2vmain.main(tensorboard);
+    #from w2v import main as w2vmain
+    #w2vmain.main(tensorboard)
+
+    from pretrained_w2v import main as pretrainedmain
+    pretrainedmain.main(tensorboard)
 
 if __name__ == '__main__':
     main()
