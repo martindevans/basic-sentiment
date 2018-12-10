@@ -1,8 +1,10 @@
 import os
 import math
 import random
+import time
 
 from os.path import join
+from multiprocessing import Pool
 
 import pandas as pd
 import numpy as np
@@ -18,46 +20,17 @@ import pretrained_w2v.parameters as pr
 
 class Dataset:
 
-    def __init__(self, labelled_items, pretrained_word_index, vocab_size, min_sequence_length, max_sequence_length):
-
-        self.unknown_words = 0
-        self.known_words = 0
+    def __init__(self, labelled_items, pretrained_word_index, min_sequence_length, max_sequence_length):
 
         # Split labelled data into a list of sentences and a list of classes, making sure to discard invalid items
         (sentences, classes) = labelled_items
         if (len(sentences) != len(classes)):
             raise "Data and class labels are not the same length"
 
-        sequences = None
-        if pretrained_word_index == None:
-            # Fit a tokenizer, converting words to integers
-            self.tokenizer = Tokenizer(num_words=vocab_size)
-            self.tokenizer.fit_on_texts(sentences)
-            sequences = self.tokenizer.texts_to_sequences(sentences)
-        else:
-            # Convert words into indices from pretrained model
-            sequences = []
-            with pb.ProgressBar(widgets=[ pb.Percentage(), ' ', pb.AdaptiveETA(), ' ', pb.Bar() ], max_value=len(sentences)) as bar:
-                i = 0
-                for item in sentences:
-                    bar.update(i)
-                    i += 1
-                    seq = []
-                    for word in item:
-                        windex = pretrained_word_index.wv.vocab.get(word)
-                        if windex:
-                            seq.append(windex.index)
-                            self.known_words += 1
-                        else:
-                            seq.append(0)
-                            self.unknown_words += 1
-                    sequences.append(seq)
-
-        ## Zip together sentences with classes to form tuples of each sentence with it's class
-        seq_class = list(zip(sequences, classes))
+        # Zip together into a list of [(sentence, class)]
+        seq_class = list(zip(sentences, classes))
 
         # Store sequences in the smallest batch which can contain them
-        # Batches have a pow2 size and items are padded up to the appropriate length
         batches_lookup = {}
         self.max_sequence_length = 0
         self.total_sequences = 0
@@ -84,10 +57,17 @@ class Dataset:
             for i in range(0, len(l), n):
                 yield l[i:i + n]
 
+        def pad_to_max(lists, pad_with):
+            max_len = max(map(len, lists))
+            for item in lists:
+                l = len(item)
+                if l < max_len:
+                    item += [pad_with] * (max_len - l)
+
         # Each batch is:
-        #   `List<Tuple<List<Int>, Classification>>`
+        #   `List<Tuple<List<str>, Classification>>`
         # But we want to split that into
-        #   `Tuple<List<List<Int>>, List<Classification>>`
+        #   `Tuple<List<List<str>>, List<Classification>>`
         # This can be achieved by magic: https://stackoverflow.com/questions/12974474/how-to-unzip-a-list-of-tuples-into-individual-lists
         self.train_batches = []
         self.validation_batches = []
@@ -108,11 +88,37 @@ class Dataset:
                 output = self.train_batches
                 if (random.random() < pr.validation_pct):
                     output = self.validation_batches
-                output.append((pad_sequences(data), clss))
 
-        ## Shuffle batch order
-        random.shuffle(self.train_batches)
-        random.shuffle(self.validation_batches)
+                # Pad data to longest list in set
+                pad_to_max(data, "<unk>")
+
+                # Append to the output list
+                output.append((data, clss))
+
+        def convert_sentences(sentences, progress, i):
+            result = np.zeros(shape=(len(sentences), len(sentences[0]), pr.word_vector_dimension))
+            for sentence_index, sentence in enumerate(sentences):
+                for word_index, word in enumerate(sentence):
+                    if word in pretrained_word_index:
+                        result[sentence_index,word_index,:] = pretrained_word_index[word]
+                i += 1
+                progress.update(i)
+            return (result, i)
+
+        def convert_batches(batches):
+            random.shuffle(batches)
+            total = sum(map(lambda x: len(x[0]), batches))
+            with pb.ProgressBar(widgets=[ pb.Percentage(), ' ', pb.AdaptiveETA(), ' ', pb.Bar(), ' ', pb.Timer() ], max_value=total) as bar:
+                i = 0
+                for index, batch in enumerate(batches):
+                    (data, clss) = batch
+                    (converted, i2) = convert_sentences(data, bar, i)
+                    batches[index] = (converted, clss)
+                    i = i2
+
+        # Convert lists of words in batches to lists of word vectors
+        convert_batches(self.train_batches)
+        convert_batches(self.validation_batches)
 
         # Run each batch once per epoch
         self.steps_per_epoch = len(self.train_batches)
@@ -137,8 +143,6 @@ class Dataset:
         return {
             #"train_batches": sorted(train_batch_stats, key=lambda x: x["num_items"]),
             #"validation_batches": sorted(val_batch_stats, key=lambda x: x["num_items"]),
-            "known_words": self.known_words,
-            "unknown_words": self.unknown_words,
             "num_train_batches": len(self.train_batches),
             "num_validation_batches": len(self.validation_batches),
             "num_sentences": self.total_sequences,
