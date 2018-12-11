@@ -12,15 +12,12 @@ def build():
     model.add(GaussianNoise(pr.input_std_dev, input_shape=(None,pr.word_vector_dimension)))
 
     ## LSTM layer works through all the words of the sentence
-    lstm = LSTM(pr.lstm_output, dropout=pr.dropout, recurrent_dropout=pr.recurrent_dropout)
-    if pr.bidirectional:
-        model.add(Bidirectional(lstm))
-    else:
-        model.add(lstm)
+    model.add(Bidirectional(LSTM(pr.lstm_output, dropout=pr.dropout, recurrent_dropout=pr.recurrent_dropout)))
 
-    ## A single dense layer modifies the LSTM output
+    ## Add dense layers after the LSTM
     if (pr.intermediate_dense_size > 0):
-        model.add(Dense(pr.intermediate_dense_size, activation='tanh'))
+        for _ in range(0, pr.intermediate_dense_layers):
+            model.add(Dense(pr.intermediate_dense_size, activation='selu'))
 
     ## 3 neuron dense layer classifies as  one of the three classes (Positive, Neutral, Negative)
     model.add(Dense(3, activation='softmax'))

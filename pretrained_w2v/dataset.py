@@ -22,6 +22,8 @@ class Dataset:
 
     def __init__(self, labelled_items, pretrained_word_index, min_sequence_length, max_sequence_length):
 
+        self.pretrained_word_index = pretrained_word_index
+
         # Split labelled data into a list of sentences and a list of classes, making sure to discard invalid items
         (sentences, classes) = labelled_items
         if (len(sentences) != len(classes)):
@@ -52,10 +54,24 @@ class Dataset:
             base_pow = math.ceil(math.log2(l))
             batches_lookup.setdefault(base_pow, []).append(tup)
 
-        def chunks(l, n):
-            """Yield successive n-sized chunks from l."""
-            for i in range(0, len(l), n):
-                yield l[i:i + n]
+        def chunks(l, maxn):
+            results = []
+
+            current = None
+            count = 0
+            for item in l:
+                (words,clss) = item
+                c = len(words)
+                if current != None and count + c < maxn:
+                    current.append((words,clss))
+                    count = count + c
+                else:
+                    current = []
+                    results.append(current)
+                    count = 0
+
+            return results
+
 
         def pad_to_max(lists, pad_with):
             max_len = max(map(len, lists))
@@ -95,31 +111,6 @@ class Dataset:
                 # Append to the output list
                 output.append((data, clss))
 
-        def convert_sentences(sentences, progress, i):
-            result = np.zeros(shape=(len(sentences), len(sentences[0]), pr.word_vector_dimension))
-            for sentence_index, sentence in enumerate(sentences):
-                for word_index, word in enumerate(sentence):
-                    if word in pretrained_word_index:
-                        result[sentence_index,word_index,:] = pretrained_word_index[word]
-                i += 1
-                progress.update(i)
-            return (result, i)
-
-        def convert_batches(batches):
-            random.shuffle(batches)
-            total = sum(map(lambda x: len(x[0]), batches))
-            with pb.ProgressBar(widgets=[ pb.Percentage(), ' ', pb.AdaptiveETA(), ' ', pb.Bar(), ' ', pb.Timer() ], max_value=total) as bar:
-                i = 0
-                for index, batch in enumerate(batches):
-                    (data, clss) = batch
-                    (converted, i2) = convert_sentences(data, bar, i)
-                    batches[index] = (converted, clss)
-                    i = i2
-
-        # Convert lists of words in batches to lists of word vectors
-        convert_batches(self.train_batches)
-        convert_batches(self.validation_batches)
-
         # Run each batch once per epoch
         self.steps_per_epoch = len(self.train_batches)
         self.val_steps = len(self.validation_batches)
@@ -133,8 +124,8 @@ class Dataset:
             return {
                 "num_items": len(sentences),
                 "item_length": len(sentences[0]),
-                #"example": str(sentences[0][:32]),
-                #"example_class": str(classes[0])
+                "example": str(sentences[0][:5]),
+                "example_class": str(classes[0])
             }
 
         train_batch_stats = list(map(batch_stats_map, self.train_batches))
@@ -149,17 +140,26 @@ class Dataset:
             "longest_sentence": self.max_sequence_length
         }
 
+    def convert_batch(self, batch):
+            (data, classes) = batch
+            result = np.zeros(shape=(len(data), len(data[0]), pr.word_vector_dimension))
+            for sentence_index, sentence in enumerate(data):
+                for word_index, word in enumerate(sentence):
+                    if word in self.pretrained_word_index:
+                        result[sentence_index,word_index,:] = self.pretrained_word_index[word]
+            return (result, classes)
+
     def data_gen(self):
         while True:
             random.shuffle(self.train_batches)
             for batch in self.train_batches:
-                yield batch
+                yield self.convert_batch(batch)
 
     def val_gen(self):
         while True:
             random.shuffle(self.validation_batches)
             for batch in self.validation_batches:
-                yield batch
+                yield self.convert_batch(batch)
 
     def get_train_batches(self):
         return self.train_batches
