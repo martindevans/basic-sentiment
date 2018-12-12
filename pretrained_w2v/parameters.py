@@ -6,9 +6,9 @@ recurrent_dropout = 0.2
 ## Std dev of noise applied to input
 input_std_dev = 0.0
 ## Maximum number of training epochs
-max_epochs = 100
+max_epochs = 1
 ## Max number of words in a single batch (tweak this up as much as possible until you run out of GPU memory)
-max_batch_size = 100000
+max_batch_size = 50000
 
 # Dataset parameters
 ## Number of word vectors
@@ -33,3 +33,6 @@ lstm_output = 64
 intermediate_dense_size = lstm_output
 ## Number of layers after the LSTM
 intermediate_dense_layers = 2
+
+# Evaluation parameters
+evaluate_batches = 15

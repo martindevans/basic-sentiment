@@ -12,7 +12,7 @@ import progressbar as pb
 
 from nltk.corpus import stopwords
 
-from keras.preprocessing.text import Tokenizer, text_to_word_sequence
+from keras.preprocessing.text import text_to_word_sequence
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils import to_categorical
 
@@ -117,27 +117,27 @@ class Dataset:
 
     def stats(self):
 
-        def batch_stats_map(batch):
-            sentences = batch[0]
-            classes = batch[1]
+        def batches_stats(batches):
+            positives = 0; negatives = 0; neutrals = 0
+
+            for batch in batches:
+                negatives = negatives + sum(1 for _ in filter(lambda x: bool(x[0]), batch[1]))
+                positives = positives + sum(1 for _ in filter(lambda x: bool(x[1]), batch[1]))
+                neutrals = neutrals + sum(1 for _ in filter(lambda x: bool(x[2]), batch[1]))
 
             return {
-                "num_items": len(sentences),
-                "item_length": len(sentences[0]),
-                "example": str(sentences[0][:5]),
-                "example_class": str(classes[0])
+                "negatives": negatives,
+                "neutrals": neutrals,
+                "positives": positives
             }
 
-        train_batch_stats = list(map(batch_stats_map, self.train_batches))
-        val_batch_stats = list(map(batch_stats_map, self.validation_batches))
-
         return {
-            #"train_batches": sorted(train_batch_stats, key=lambda x: x["num_items"]),
-            #"validation_batches": sorted(val_batch_stats, key=lambda x: x["num_items"]),
             "num_train_batches": len(self.train_batches),
             "num_validation_batches": len(self.validation_batches),
             "num_sentences": self.total_sequences,
-            "longest_sentence": self.max_sequence_length
+            "longest_sentence": self.max_sequence_length,
+            "train_stats": batches_stats(self.train_batches),
+            "val_stats": batches_stats(self.validation_batches)
         }
 
     def convert_batch(self, batch):

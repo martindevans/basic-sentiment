@@ -1,12 +1,12 @@
 import json
-
-from pymagnitude import Magnitude
+import time
 
 from gensim.models.keyedvectors import KeyedVectors
 
 import pretrained_w2v.parameters as pr
 import pretrained_w2v.model as mdl
 import pretrained_w2v.dataset as dat
+import pretrained_w2v.evaluate as eva
 
 def main(tensorboard):
 
@@ -26,3 +26,11 @@ def main(tensorboard):
 
     print("## Training Model")
     mdl.train(model, dataset, tensorboard)
+
+    print("## Saving Model")
+    name = "final_model"
+    model.save("models/" + name)
+
+    print("## Evaluating Model")
+    predictor = mdl.SentimentAnalyser(model, word_vectors)
+    print(eva.evaluate(dataset, predictor))
