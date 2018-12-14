@@ -177,7 +177,8 @@ def clean_sentences(sentences):
             bar.update(i)
             i += 1
             seq = text_to_word_sequence(s, lower=True, split=" ")
-            seq = list([w for w in seq if not w in stops])
+            if pr.remove_stop_words:
+                seq = list([w for w in seq if not w in stops])
             results.append(seq)
 
     return results

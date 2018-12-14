@@ -51,9 +51,7 @@ def build():
     model.add(Dense(3, activation='softmax'))
 
     print(" - Compiling model")
-    precision = as_keras_metric(tf.metrics.precision)
-    recall = as_keras_metric(tf.metrics.recall)
-    model.compile(loss='categorical_crossentropy', optimizer='nadam', metrics = ['accuracy', precision, recall])
+    model.compile(loss='categorical_crossentropy', optimizer='nadam', metrics = ['accuracy'])
 
     return model
 
@@ -61,5 +59,5 @@ def train(model, dataset, tensorboard):
     model.fit_generator(dataset.data_gen(), steps_per_epoch=dataset.steps_per_epoch, epochs=pr.max_epochs, callbacks=[
         tensorboard,
         EarlyStopping(monitor='val_acc', patience=8, restore_best_weights=True),
-        ModelCheckpoint("models/sentiment-w2v-weights.{epoch:02d}-{val_acc:.2f}.hdf5", monitor="val_acc", save_best_only=True),
+        ModelCheckpoint("models/sentiment-w2v-weights.{epoch:02d}-{val_acc:.4f}.hdf5", monitor="val_acc", save_best_only=True),
     ], validation_data=dataset.val_gen(), validation_steps=dataset.val_steps)
