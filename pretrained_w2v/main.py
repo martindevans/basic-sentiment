@@ -15,6 +15,10 @@ def main(tensorboard):
     # todo: It should be possible to load a saved hdf5 file and continue training
     # - How should the dataset be handled? Seed the train/validation split so it's consistent?
 
+    print("## Building model")
+    model = mdl.build()
+    print(model.summary())
+
     print("## Loading Pretrained Word Vectors")
     word_vectors = KeyedVectors.load_word2vec_format(pr.pretrained_word_vectors_path, binary=True, limit=pr.vocab_size)
 
@@ -24,11 +28,6 @@ def main(tensorboard):
     print("## Building Training Dataset")
     dataset = dat.Dataset(labelled_data, word_vectors, pr.min_sentence_length, pr.max_sentence_length)
     print(json.dumps(dataset.stats(), sort_keys=True, indent=4, separators=(',', ': ')))
-
-    print("## Building model")
-    #model = mdl.build()
-    model = load_model("models/sentiment-w2v-weights.33-0.92.hdf5")
-    print(model.summary())
 
     print("## Training Model")
     mdl.train(model, dataset, tensorboard)

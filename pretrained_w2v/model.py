@@ -2,7 +2,7 @@ import numpy as np
 
 import tensorflow as tf
 
-from keras.layers import Dense, Embedding, LSTM, SpatialDropout1D, Bidirectional, GaussianNoise
+from keras.layers import Dense, Embedding, LSTM, SpatialDropout1D, Bidirectional, Dropout
 from keras.models import Sequential
 from keras.callbacks import LambdaCallback, EarlyStopping, ModelCheckpoint
 from keras.preprocessing.text import Tokenizer, text_to_word_sequence
@@ -37,7 +37,7 @@ class SentimentAnalyser:
 def build():
     model = Sequential()
 
-    model.add(GaussianNoise(pr.input_std_dev, input_shape=(None,pr.word_vector_dimension)))
+    model.add(Dropout(pr.input_dropout, input_shape=(None,pr.word_vector_dimension)))
 
     ## LSTM layer works through all the words of the sentence
     model.add(Bidirectional(LSTM(pr.lstm_output, dropout=pr.dropout, recurrent_dropout=pr.recurrent_dropout)))

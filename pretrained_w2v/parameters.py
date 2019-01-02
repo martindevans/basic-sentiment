@@ -3,8 +3,8 @@
 dropout = 0.2
 ## LSTM recurrent dropout
 recurrent_dropout = 0.2
-## Std dev of noise applied to input
-input_std_dev = 0.0
+## Fraction of inputs to zero out
+input_dropout = 0.0
 ## Maximum number of training epochs
 max_epochs = 100
 ## Max number of words in a single batch (tweak this up as much as possible until you run out of GPU memory)
