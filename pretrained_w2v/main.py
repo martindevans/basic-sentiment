@@ -4,6 +4,7 @@ import time
 from gensim.models.keyedvectors import KeyedVectors
 
 from keras.models import load_model
+from keras.backend import set_learning_phase
 
 import pretrained_w2v.parameters as pr
 import pretrained_w2v.model as mdl
@@ -34,6 +35,7 @@ def main(tensorboard):
 
     print("## Saving Model")
     name = "final_model"
+    set_learning_phase(0) # Disable training phase, this ensures all train-only layers are disabled from now on
     model.save("models/" + name)
 
     print("## Evaluating Model")

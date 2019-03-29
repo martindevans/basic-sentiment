@@ -7,3 +7,4 @@
 /utils/gutenbergdammit/__pycache__
 /data_cache
 /pretrained_w2v/__pycache__
+/oov/__pycache__

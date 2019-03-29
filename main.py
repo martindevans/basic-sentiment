@@ -26,8 +26,11 @@ def main():
     #from w2v import main as w2vmain
     #w2vmain.main(tensorboard)
 
-    from pretrained_w2v import main as pretrainedmain
-    pretrainedmain.main(tensorboard)
+    #from pretrained_w2v import main as pretrainedmain
+    #pretrainedmain.main(tensorboard)
+
+    from oov import main as oovmain
+    oovmain.main(tensorboard)
 
 if __name__ == '__main__':
     main()
